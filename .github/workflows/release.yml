@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_part:
+        description: 'Version part to bump'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: 'Dry run (do not actually release)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pre-release checks
+        run: |
+          echo "Running linting..."
+          uv run ruff check
+          
+          echo "Running tests..."
+          uv run pytest -v
+          
+          echo "Building package..."
+          uv build
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(uv run bump-my-version show current_version)
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump version (Dry Run)
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "DRY RUN: Would bump ${{ inputs.version_part }} version from ${{ steps.current_version.outputs.current_version }}"
+          uv run bump-my-version bump ${{ inputs.version_part }} --dry-run --verbose
+
+      - name: Bump version and create tag
+        if: ${{ !inputs.dry_run }}
+        run: |
+          echo "Bumping ${{ inputs.version_part }} version..."
+          uv run bump-my-version bump ${{ inputs.version_part }}
+          
+          NEW_VERSION=$(uv run bump-my-version show current_version)
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Version bumped to: $NEW_VERSION"
+
+      - name: Build package
+        if: ${{ !inputs.dry_run }}
+        run: uv build
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          release_name: Release v${{ env.NEW_VERSION }}
+          body: |
+            ## Release v${{ env.NEW_VERSION }}
+            
+            Automated release created by GitHub Actions.
+            
+            ### Changes
+            See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+            
+            ### Installation
+            ```bash
+            pip install digital-casting-system==${{ env.NEW_VERSION }}
+            ```
+          draft: false
+          prerelease: false
+
+      - name: Publish to PyPI
+        if: ${{ !inputs.dry_run && github.ref == 'refs/heads/main' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          echo "Publishing to PyPI..."
+          uv run twine upload dist/*
+
+      - name: Upload artifacts
+        if: ${{ !inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/

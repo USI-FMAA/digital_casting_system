@@ -209,6 +209,35 @@ pip install git+git://github.com/WeiTing1991/compas_rrc.git@main
 
 <!-- Misc -->
 
+## Release Process
+
+This project uses automated release management with semantic versioning. 
+
+### For Maintainers
+
+```bash
+# Quick release (patch version)
+invoke release
+
+# Minor release (new features)  
+invoke release --part minor
+
+# Major release (breaking changes)
+invoke release --part major
+
+# Check release readiness
+invoke release-check
+```
+
+### Automated Releases
+
+The project supports automated releases triggered by conventional commit messages:
+- `feat:` → Minor release
+- `fix:` → Patch release  
+- `feat!:` or `BREAKING CHANGE:` → Major release
+
+See [Release Guide](docs/release-guide.md) for complete documentation.
+
 ## Credits
 Author: [Wei-Ting Chen](https://github.com/WeiTing1991)
 
