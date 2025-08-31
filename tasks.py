@@ -55,8 +55,12 @@ def docs_clean(ctx):
 
 
 @task
-def build(ctx):
-  """Build the package for distribution."""
+def build(ctx, with_data: bool = False):
+  """Build the package for distribution.
+
+  Args:
+      with_data: If True, also creates the separate data archive
+  """
   print("Building package...")
 
   # Clean first
@@ -65,6 +69,48 @@ def build(ctx):
   # Build with hatchling (no isolation to avoid network issues)
   ctx.run("python -m build --no-isolation", pty=True)
   print("Package built successfully!")
+
+  if with_data:
+    package_data(ctx)
+
+
+@task
+def package_data(ctx):
+  """Create a separate data archive for sample datasets and configurations.
+
+  Packages the data directory into a compressed archive that users can download
+  separately to reduce the main package size.
+  """
+  import tarfile
+  from pathlib import Path
+
+  print("Creating data archive...")
+
+  # Clean first
+  ctx.run("rm -f dist/dcs-sample-data-*.tar.gz", pty=True, warn=True)
+
+  # Create dist directory if it doesn't exist
+  Path("dist").mkdir(exist_ok=True)
+
+  # Get version for archive naming
+  version = "0.1.5"  # Could be extracted from pyproject.toml
+  archive_name = f"dist/dcs-sample-data-{version}.tar.gz"
+
+  # Create archive
+  with tarfile.open(archive_name, "w:gz") as tar:
+    tar.add("data", arcname="dcs-sample-data")
+
+  print(f"Data archive created: {archive_name}")
+
+  # Show archive contents summary
+  with tarfile.open(archive_name, "r:gz") as tar:
+    members = tar.getmembers()
+    print(f"Archive contains {len(members)} files and directories")
+    print("Archive contents preview:")
+    for member in members[:10]:  # Show first 10 entries
+      print(f"  {member.name}")
+    if len(members) > 10:
+      print(f"  ... and {len(members) - 10} more files")
 
 
 @task

@@ -14,21 +14,25 @@ class DataProcessing:
     """Initialize with filename and optional data.
 
     Args:
-        filename (str): Base filename for exported files.
-        data (dict, optional): Initial data dictionary. Defaults to None.
+        filename: Base filename for exported files.
+        data: Initial data dictionary. Defaults to None.
     """
     # Date
     now_data = datetime.now().date().strftime("%Y%m%d")
     here = os.path.dirname(__file__)
     home = os.path.abspath(os.path.join(here, "../../../"))
-    data = os.path.abspath(os.path.join(home, "data"))
+    data_dir = os.path.abspath(os.path.join(home, "data"))
 
     self.__date = now_data
     self.default_filename = self.__date + "_" + filename
 
-    self.__data = data
+    self.__data = data_dir
     json_dir = os.path.join(self.__data, "json")
     csv_dir = os.path.join(self.__data, "csv")
+
+    # Create directories if they don't exist
+    os.makedirs(json_dir, exist_ok=True)
+    os.makedirs(csv_dir, exist_ok=True)
 
     self.filepath_json = json_dir
     self.filepath_csv = csv_dir
@@ -38,31 +42,16 @@ class DataProcessing:
 
   @property
   def data_dict(self) -> dict:
-    """Get the current data dictionary.
-
-    Returns:
-        dict: The stored data dictionary.
-    """
+    """Get the current data dictionary."""
     return self.data
 
   @data_dict.setter
   def update_data(self, new_data: dict) -> None:
-    """Update the data dictionary.
-
-    Args:
-        new_data (dict): New data dictionary to store.
-    """
+    """Update the data dictionary."""
     self.data = new_data
 
   def __is_file_existed(self, filepath: str) -> bool:
-    """Check if file already exists.
-
-    Args:
-        filepath (str): Path to the file to check.
-
-    Returns:
-        bool: True if file exists, False otherwise.
-    """
+    """Check if file already exists."""
     if os.path.isfile(filepath):
       return True
     else:
@@ -95,7 +84,7 @@ class DataProcessing:
     """Export data dictionary to CSV file.
 
     Args:
-        header (list): List of column headers for the CSV file.
+        header: List of column headers for the CSV file.
 
     Raises:
         Exception: If the file already exists.

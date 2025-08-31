@@ -88,10 +88,10 @@ allow-direct-references = true
 [tool.hatch.build.targets.wheel]
 packages = [
   "src/dcs",
-  "src/infrastructure",
-  "src/robot",
-  "src/hal",
-  "src/utils",
+]
+exclude = [
+  "data/",
+  "data/**/*",
 ]
 
 [tool.ruff]

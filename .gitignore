@@ -125,3 +125,6 @@ temp/**
 docs/api/generated/
 
 conda.recipe/
+
+# Data directory - excluded from package, available separately as data archive
+data/
