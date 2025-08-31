@@ -39,7 +39,34 @@ command line to ease recurring operations:
 * `invoke check`: Run various code and documentation style checks.
 * `invoke docs`: Generate documentation.
 * `invoke test`: Run all tests and checks in one swift command.
+* `invoke build`: Build the package for distribution.
+* `invoke build-release`: Build a release with automatic version bumping and tagging.
+* `invoke gh-release`: Create GitHub release using GitHub CLI - automatically detects tag.
 * `invoke`: Show available tasks.
+
+## Releases
+
+Releases are automated via GitHub Actions. To create a new release:
+
+1. **Manual Release Process**:
+   ```bash
+   # Bump version and create tag (patch/minor/major)
+   invoke build-release --part=patch
+   
+   # Push tags to trigger automated release
+   git push origin --tags
+   ```
+
+2. **Automated Release Process**:
+   - The GitHub Actions workflow (`.github/workflows/release.yml`) automatically triggers on tag pushes
+   - Builds the package using `uv build`
+   - Creates a GitHub release with changelog notes using `invoke gh-release`
+   - Uploads wheel and source distribution as release assets
+
+3. **Release Artifacts**:
+   - Python wheel (`.whl`)
+   - Source distribution (`.tar.gz`)
+   - Automated release notes from changelog
 
 ## Bug reports
 
