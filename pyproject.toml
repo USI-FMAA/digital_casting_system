@@ -89,10 +89,6 @@ allow-direct-references = true
 packages = [
   "src/dcs",
 ]
-exclude = [
-  "data/",
-  "data/**/*",
-]
 
 [tool.ruff]
 indent-width = 2
